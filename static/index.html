@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explain It Simple — AI Mentor Tool</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Inter & Outfit Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    h1, h2, h3, .font-display {
+      font-family: 'Outfit', sans-serif;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-100 flex flex-col min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <span class="text-white font-extrabold text-xl">💡</span>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-indigo-200 to-violet-200 bg-clip-text text-transparent">Explain It Simple</h1>
+          <p class="text-xs text-slate-400">AI-Powered Plain Language Mentor</p>
+        </div>
+      </div>
+      <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700/60">v1.0 (Llama 3.3)</span>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-grow max-w-3xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
+
+    <!-- Global Error Banner -->
+    <div id="error-banner" class="hidden mb-6 p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-red-200 flex justify-between items-start">
+      <div class="flex space-x-3">
+        <svg class="h-5 w-5 text-red-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span id="error-message" class="text-sm">An error occurred.</span>
+      </div>
+      <button onclick="hideError()" class="text-red-400 hover:text-red-300 ml-4 font-bold text-lg leading-none">&times;</button>
+    </div>
+
+    <!-- State 1: INPUT STATE -->
+    <section id="state-input" class="w-full">
+      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
+        <div class="text-center mb-8">
+          <h2 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Simplify Any Complex Topic</h2>
+          <p class="text-slate-400 mt-2 text-sm md:text-base">Explain tough concepts in plain language using AI-tailored analogies and test your understanding instantly.</p>
+        </div>
+
+        <form id="input-form" onsubmit="handleGenerate(event)" class="space-y-6">
+          <!-- Topic Input -->
+          <div>
+            <label for="topic" class="block text-sm font-semibold text-slate-300 mb-2">What topic do you want to learn?</label>
+            <input type="text" id="topic" name="topic" required maxlength="150"
+              class="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-200 text-sm md:text-base"
+              placeholder="e.g., Recursion, Blockchain, Quantum Superposition, Neural Networks">
+            <p class="text-xs text-slate-500 mt-1.5">Max 150 characters.</p>
+          </div>
+
+          <!-- Audience Input -->
+          <div>
+            <label for="audience" class="block text-sm font-semibold text-slate-300 mb-2">Who is the explanation for?</label>
+            <input type="text" id="audience" name="audience" required maxlength="150"
+              class="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-200 text-sm md:text-base"
+              placeholder="e.g., a junior developer, a 10 year old, a business executive, a non-technical CEO">
+            <p class="text-xs text-slate-500 mt-1.5">Max 150 characters.</p>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit"
+            class="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium py-3.5 px-6 rounded-xl transition duration-200 shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
+            Explain It Simple
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- State 2: LESSON STATE -->
+    <section id="state-lesson" class="hidden w-full space-y-6">
+      <!-- Lesson Header Info -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between bg-slate-900/50 border border-slate-800/80 rounded-2xl px-6 py-5 shadow-2xl backdrop-blur-md space-y-3 md:space-y-0">
+        <div>
+          <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Active Lesson</span>
+          <h2 id="lesson-header-topic" class="text-xl md:text-2xl font-extrabold text-white leading-tight">Recursion</h2>
+        </div>
+        <div class="text-xs md:text-sm bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 rounded-xl px-4 py-2 self-start md:self-auto font-medium shadow-sm">
+          Target Audience: <span id="lesson-header-audience" class="font-semibold text-white">a junior developer</span>
+        </div>
+      </div>
+
+      <!-- Dynamic AI Diagram Container (Supports N Topics) -->
+      <div id="lesson-image-container" class="hidden w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-800/80 relative bg-slate-900/50 p-6 backdrop-blur-md">
+        <!-- Loading state -->
+        <div id="lesson-image-loading" class="absolute inset-0 flex flex-col items-center justify-center space-y-3 z-10 bg-slate-900/70 backdrop-blur-sm">
+          <svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="text-sm font-medium text-slate-300">Rendering visual diagrams...</span>
+        </div>
+        <!-- Grid of N Diagram Cards -->
+        <div id="lesson-diagrams-grid" class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Injected dynamically per topic -->
+        </div>
+      </div>
+
+      <!-- Plain Language Explanation Card -->
+      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
+        <h3 class="text-lg font-bold text-white mb-3 flex items-center">
+          <span class="text-indigo-400 mr-2.5 text-xl">📘</span> Plain-Language Explanation
+        </h3>
+        <div id="lesson-explanation" class="text-slate-300 text-sm md:text-base leading-relaxed">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Analogy Card -->
+      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
+        <h3 class="text-lg font-bold text-white mb-3 flex items-center">
+          <span class="text-emerald-400 mr-2.5 text-xl">🌿</span> Real-World Analogy
+        </h3>
+        <p id="lesson-analogy" class="text-slate-300 text-sm md:text-base leading-relaxed italic border-l-3 border-emerald-500/60 pl-4 py-1">
+          <!-- Populated dynamically -->
+        </p>
+      </div>
+
+      <!-- Process Steps Card -->
+      <div id="visual-steps-card" class="hidden bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center">
+          <span class="text-blue-400 mr-2.5 text-xl">🔄</span> Process Steps
+        </h3>
+        <div id="visual-steps-container" class="relative border-l-2 border-slate-700/50 ml-3 space-y-6">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Exercises Card -->
+      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md space-y-6">
+        <div>
+          <h3 class="text-lg font-bold text-white flex items-center">
+            <span class="text-fuchsia-400 mr-2.5 text-xl">🏋️</span> Practical Exercises
+          </h3>
+          <p class="text-xs text-slate-400 mt-1">Apply your knowledge with these short exercises.</p>
+        </div>
+        <div id="exercises-container" class="space-y-6 divide-y divide-slate-800/80">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Quiz Card -->
+      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md space-y-6">
+        <div>
+          <h3 class="text-lg font-bold text-white flex items-center">
+            <span class="text-amber-400 mr-2.5 text-xl">✍️</span> Quick Quiz
+          </h3>
+          <p class="text-xs text-slate-400 mt-1">Answer the multiple-choice questions below to test your knowledge.</p>
+        </div>
+
+        <form id="quiz-form" onsubmit="handleGrade(event)" class="space-y-6">
+          <div id="quiz-questions-container" class="space-y-6 divide-y divide-slate-800/80">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="submit-quiz-btn" disabled
+            class="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium py-3.5 px-6 rounded-xl transition duration-200 shadow-lg shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:from-indigo-500 disabled:hover:to-violet-600 disabled:active:scale-100">
+            Submit Quiz
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- State 3: RESULT STATE -->
+    <section id="state-result" class="hidden w-full">
+      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md text-center space-y-6">
+        <!-- Visual Score Indicator -->
+        <div class="inline-flex flex-col items-center justify-center p-6 rounded-full bg-slate-950/80 border border-slate-800/80 mb-2 shadow-inner">
+          <span class="text-slate-400 text-xs uppercase tracking-widest font-bold">Your Score</span>
+          <span id="result-score" class="text-5xl font-extrabold mt-1 text-white">0 / 3</span>
+        </div>
+
+        <div class="space-y-3">
+          <h3 class="text-xl font-extrabold text-white">AI Mentor Feedback</h3>
+          <div class="bg-slate-950/60 border border-slate-800/60 rounded-xl p-5 max-w-xl mx-auto">
+            <p id="result-feedback" class="text-slate-300 text-sm md:text-base leading-relaxed italic">
+              <!-- Populated dynamically -->
+            </p>
+          </div>
+        </div>
+
+        <div class="pt-4">
+          <button onclick="resetApp()"
+            class="w-full md:w-auto md:px-8 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-medium py-3.5 px-6 rounded-xl transition duration-200 shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
+            Try Another Topic
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center space-y-4 shadow-2xl">
+        <!-- Spinner -->
+        <div class="flex justify-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+        <p id="loading-text" class="text-slate-200 font-medium text-sm md:text-base">
+          Thinking...
+        </p>
+        <p class="text-xs text-slate-500">This may take up to a few seconds.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-900/20 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-4xl mx-auto px-4">
+      <p>&copy; 2026 Chilukuri Vennela Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Frontend Javascript -->
+  <script>
+    // In-memory state variables
+    let currentTopic = "";
+    let currentAudience = "";
+    let currentQuiz = [];
+    let currentExercises = [];
+    let selectedAnswers = [null, null, null];
+    let exerciseAnswers = ["", ""];
+
+    // Show/hide helper utilities
+    function showEl(el) {
+      if (el) el.classList.remove('hidden');
+    }
+
+    function hideEl(el) {
+      if (el) el.classList.add('hidden');
+    }
+
+    function showError(message) {
+      const banner = document.getElementById("error-banner");
+      const text = document.getElementById("error-message");
+      text.textContent = message;
+      showEl(banner);
+      // Scroll to error if it's not visible
+      banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideError() {
+      const banner = document.getElementById("error-banner");
+      hideEl(banner);
+    }
+
+    function showLoading(text) {
+      const overlay = document.getElementById("loading-overlay");
+      const label = document.getElementById("loading-text");
+      label.textContent = text || "Processing...";
+      showEl(overlay);
+    }
+
+    function hideLoading() {
+      const overlay = document.getElementById("loading-overlay");
+      hideEl(overlay);
+    }
+
+    // Toggle main app state views
+    function transitionTo(state) {
+      const sInput = document.getElementById("state-input");
+      const sLesson = document.getElementById("state-lesson");
+      const sResult = document.getElementById("state-result");
+
+      hideEl(sInput);
+      hideEl(sLesson);
+      hideEl(sResult);
+
+      if (state === 'input') {
+        showEl(sInput);
+      } else if (state === 'lesson') {
+        showEl(sLesson);
+      } else if (state === 'result') {
+        showEl(sResult);
+      }
+    }
+
+    // Verify if all answers are selected and toggle submit button disabled status
+    function updateSubmitButtonState() {
+      const submitBtn = document.getElementById("submit-quiz-btn");
+      const allAnswered = selectedAnswers.every(ans => ans !== null);
+      const allExercisesAnswered = exerciseAnswers.every(ans => ans.trim() !== "");
+      submitBtn.disabled = !(allAnswered && allExercisesAnswered);
+    }
+
+    // Handle selection of a radio option
+    function handleOptionSelect(qIndex, optIndex) {
+      selectedAnswers[qIndex] = optIndex;
+      updateSubmitButtonState();
+    }
+
+    function formatExplanationHTML(text) {
+      if (!text) return "";
+      let html = escapeHtml(text);
+      // Format Markdown subheadings ### Topic Name
+      html = html.replace(/###\s*(.+)/g, '<h4 class="text-indigo-300 font-bold text-base md:text-lg mt-5 mb-2 border-b border-indigo-500/20 pb-1 flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2.5 inline-block shadow-sm"></span>$1</h4>');
+      // Format Markdown headings ## Topic Name
+      html = html.replace(/##\s*(.+)/g, '<h3 class="text-indigo-200 font-extrabold text-lg md:text-xl mt-6 mb-2 border-b border-indigo-500/30 pb-1.5">$1</h3>');
+      // Format bold text **text**
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+      // Newlines to linebreaks
+      html = html.replace(/\n\n/g, '<div class="h-3"></div>');
+      html = html.replace(/\n/g, '<br/>');
+      return html;
+    }
+
+    // STATE 1 Action: Generate lesson from inputs
+    async function handleGenerate(event) {
+      event.preventDefault();
+      hideError();
+
+      const topicInput = document.getElementById("topic");
+      const audienceInput = document.getElementById("audience");
+
+      const topic = topicInput.value.trim();
+      const audience = audienceInput.value.trim();
+
+      // Client-side validations
+      if (!topic) {
+        showError("Topic is required.");
+        return;
+      }
+      if (!audience) {
+        showError("Target audience is required.");
+        return;
+      }
+      if (topic.length > 150) {
+        showError("Topic cannot exceed 150 characters.");
+        return;
+      }
+      if (audience.length > 150) {
+        showError("Target audience cannot exceed 150 characters.");
+        return;
+      }
+
+      showLoading("Asking the AI mentor to simplify your topic...");
+
+      try {
+        const response = await fetch("/api/mentor/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ topic, audience })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Something went wrong while generating the explanation.");
+        }
+
+        // Save state
+        currentTopic = topic;
+        currentAudience = audience;
+        currentQuiz = data.quiz;
+        currentExercises = data.exercises || [];
+        selectedAnswers = new Array(data.quiz ? data.quiz.length : 3).fill(null);
+        exerciseAnswers = ["", ""];
+
+        // Populate Lesson View details
+        document.getElementById("lesson-header-topic").textContent = currentTopic;
+        document.getElementById("lesson-header-audience").textContent = currentAudience;
+        document.getElementById("lesson-explanation").innerHTML = formatExplanationHTML(data.explanation);
+        document.getElementById("lesson-analogy").textContent = data.analogy;
+
+        // Render Crisp Topic Diagram / Educational Visual
+        renderTopicDiagram(currentTopic, data.visual_steps, data.image_prompt);
+
+        // Render Quiz Questions, Exercises, and Visual Steps
+        renderQuiz(data.quiz);
+        renderExercises(currentExercises);
+        renderVisualSteps(data.visual_steps);
+        updateSubmitButtonState();
+
+        // Switch screen
+        transitionTo('lesson');
+      } catch (err) {
+        showError(err.message || "Something went wrong while generating the explanation. Please try again.");
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Dynamically render the quiz elements
+    function renderQuiz(quiz) {
+      const container = document.getElementById("quiz-questions-container");
+      container.innerHTML = "";
+
+      quiz.forEach((q, qIndex) => {
+        const questionDiv = document.createElement("div");
+        questionDiv.className = "pt-6 first:pt-0 space-y-3";
+
+        const title = document.createElement("h4");
+        title.className = "text-sm md:text-base font-semibold text-slate-200 leading-snug";
+        title.innerHTML = `<span class="text-indigo-400 font-bold mr-1">Q${qIndex + 1}.</span> ${escapeHtml(q.question)}`;
+        questionDiv.appendChild(title);
+
+        const optionsDiv = document.createElement("div");
+        optionsDiv.className = "grid grid-cols-1 gap-2.5 mt-2";
+
+        q.options.forEach((option, optIndex) => {
+          const label = document.createElement("label");
+          label.className = "flex items-start p-3 bg-slate-950/40 hover:bg-slate-900/60 border border-slate-800/80 hover:border-slate-700/60 rounded-xl cursor-pointer transition duration-150 text-sm select-none";
+
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = `question-${qIndex}`;
+          radio.value = optIndex;
+          radio.className = "mt-0.5 h-4.5 w-4.5 text-indigo-600 border-slate-700 bg-slate-900 focus:ring-indigo-500/50 focus:ring-offset-0";
+          radio.addEventListener("change", () => handleOptionSelect(qIndex, optIndex));
+
+          const textSpan = document.createElement("span");
+          textSpan.className = "ml-3 text-slate-300 font-medium leading-tight";
+          textSpan.textContent = option;
+
+          label.appendChild(radio);
+          label.appendChild(textSpan);
+          optionsDiv.appendChild(label);
+        });
+
+        questionDiv.appendChild(optionsDiv);
+        container.appendChild(questionDiv);
+      });
+    }
+
+    // Dynamically render the exercises
+    function renderExercises(exercises) {
+      const container = document.getElementById("exercises-container");
+      if (!container) return;
+      container.innerHTML = "";
+
+      exercises.forEach((ex, index) => {
+        const div = document.createElement("div");
+        div.className = "pt-6 first:pt-0 space-y-3";
+
+        const title = document.createElement("h4");
+        title.className = "text-sm md:text-base font-semibold text-slate-200 leading-snug";
+        title.innerHTML = `<span class="text-fuchsia-400 font-bold mr-1">Exercise ${index + 1}.</span> ${escapeHtml(ex.prompt)}`;
+        div.appendChild(title);
+
+        const textarea = document.createElement("textarea");
+        textarea.className = "w-full bg-slate-950/80 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition duration-200 text-sm md:text-base resize-y min-h-[100px]";
+        textarea.placeholder = "Write your answer here...";
+        textarea.id = `exercise-answer-${index}`;
+        textarea.addEventListener("input", (e) => {
+            exerciseAnswers[index] = e.target.value;
+            updateSubmitButtonState();
+        });
+        
+        div.appendChild(textarea);
+        container.appendChild(div);
+      });
+    }
+
+    // Dynamically render the visual steps
+    function renderVisualSteps(steps) {
+      const card = document.getElementById("visual-steps-card");
+      const container = document.getElementById("visual-steps-container");
+      container.innerHTML = "";
+      
+      if (!steps || steps.length === 0) {
+        hideEl(card);
+        return;
+      }
+      
+      steps.forEach((step, idx) => {
+        const stepDiv = document.createElement("div");
+        stepDiv.className = "relative pl-6";
+        
+        // Dot indicator
+        const dot = document.createElement("div");
+        dot.className = "absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-blue-500 border-4 border-slate-900";
+        stepDiv.appendChild(dot);
+        
+        const label = document.createElement("h4");
+        label.className = "font-bold text-slate-200";
+        label.textContent = `${idx + 1}. ${escapeHtml(step.label)}`;
+        
+        const desc = document.createElement("p");
+        desc.className = "text-sm text-slate-400 mt-1";
+        desc.textContent = step.description;
+        
+        stepDiv.appendChild(label);
+        stepDiv.appendChild(desc);
+        container.appendChild(stepDiv);
+      });
+      
+      showEl(card);
+    }
+
+    // Bracket-aware concept splitter that never breaks parenthetical expressions like (Big O, Omega, Theta)
+    function splitTopicConcepts(rawTopic) {
+      if (!rawTopic) return [];
+      const concepts = [];
+      let current = "";
+      let depth = 0;
+      
+      for (let i = 0; i < rawTopic.length; i++) {
+        const char = rawTopic[i];
+        if (char === '(' || char === '[' || char === '{') {
+          depth++;
+          current += char;
+        } else if (char === ')' || char === ']' || char === '}') {
+          depth = Math.max(0, depth - 1);
+          current += char;
+        } else if (depth === 0 && (char === ',' || char === ';' || char === '+')) {
+          if (current.trim()) concepts.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      if (current.trim()) concepts.push(current.trim());
+      
+      return concepts.map(c => {
+        let openCount = (c.match(/\(/g) || []).length;
+        let closeCount = (c.match(/\)/g) || []).length;
+        while (openCount > closeCount) { c += ')'; closeCount++; }
+        while (closeCount > openCount) { c = c.replace(/\)/, ''); closeCount--; }
+        return c.trim();
+      }).filter(c => c.length > 0);
+    }
+
+    // Crisp SVG Diagram Generator for ANY number of concepts (N Topics)
+    function renderTopicDiagram(topic, visualSteps, imagePrompt) {
+      const imgContainer = document.getElementById("lesson-image-container");
+      const loadingEl = document.getElementById("lesson-image-loading");
+      let diagramsGrid = document.getElementById("lesson-diagrams-grid");
+      
+      showEl(imgContainer);
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (window.imageTimeout) clearTimeout(window.imageTimeout);
+
+      // Recreate grid container if missing
+      if (!diagramsGrid) {
+        diagramsGrid = document.createElement("div");
+        diagramsGrid.id = "lesson-diagrams-grid";
+        imgContainer.appendChild(diagramsGrid);
+      }
+      diagramsGrid.innerHTML = ""; // Clear previous diagram cards
+
+      // Bracket-aware concept extraction
+      const parsedConcepts = splitTopicConcepts(topic);
+      const concepts = parsedConcepts.length > 0 ? parsedConcepts : [topic];
+
+      // Responsive Grid adjustment based on concept count
+      if (concepts.length === 1) {
+        diagramsGrid.className = "w-full grid grid-cols-1 gap-6";
+      } else {
+        diagramsGrid.className = "w-full grid grid-cols-1 md:grid-cols-2 gap-6";
+      }
+
+      // Helper function to render a standalone SVG diagram string for a specific concept title
+      function buildConceptSVG(cTitle) {
+        const cLower = cTitle.toLowerCase().trim();
+        let displayHeader = cTitle.trim();
+        if (displayHeader.length > 42) {
+          displayHeader = displayHeader.substring(0, 39) + "...";
+        }
+
+        // QUANTUM SUPERSTITIONS
+        if (cLower.includes("quantum") || cLower.includes("superstition")) {
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="35" text-anchor="middle" fill="#818cf8" font-size="20" font-weight="bold" font-family="sans-serif">QUANTUM SUPERPOSITION VS MEASUREMENT</text><g transform="translate(60, 65)"><rect width="320" height="210" rx="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="160" y="30" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="bold" font-family="sans-serif">SUPERPOSITION STATE |Ψ⟩</text><circle cx="160" cy="105" r="45" fill="#312e81" stroke="#818cf8" stroke-width="3"/><text x="160" y="112" text-anchor="middle" fill="#a5b4fc" font-size="24" font-weight="bold">⚛️</text><text x="160" y="180" text-anchor="middle" fill="#c7d2fe" font-size="13" font-family="sans-serif">Multiple Probable States</text></g><g transform="translate(420, 65)"><rect width="320" height="210" rx="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="160" y="30" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="bold" font-family="sans-serif">OBSERVER MEASUREMENT EFFECT</text><rect x="70" y="75" width="180" height="60" rx="10" fill="#4338ca" stroke="#4ade80" stroke-width="2"/><text x="160" y="110" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="bold">COLLAPSED: State |1⟩</text><text x="160" y="180" text-anchor="middle" fill="#4ade80" font-size="13" font-family="sans-serif">Physical Interaction Forces State</text></g></svg>`;
+        }
+
+        // STRINGS
+        if (cLower.includes("string")) {
+          const charList = ['S', 'T', 'R', 'I', 'N', 'G', '\\0'];
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="40" text-anchor="middle" fill="#818cf8" font-size="20" font-weight="bold" font-family="sans-serif">STRING DATA STRUCTURE (CHARACTER SEQUENCE)</text><g transform="translate(60, 90)">${charList.map((ch, idx) => `<g transform="translate(${idx * 98}, 0)"><rect width="88" height="90" rx="10" fill="${ch === '\\0' ? '#312e81' : '#1e1b4b'}" stroke="${ch === '\\0' ? '#a855f7' : '#6366f1'}" stroke-width="2"/><text x="44" y="55" text-anchor="middle" fill="${ch === '\\0' ? '#e9d5ff' : '#ffffff'}" font-size="28" font-weight="bold" font-family="monospace">'${ch}'</text><text x="44" y="125" text-anchor="middle" fill="#38bdf8" font-size="14" font-weight="bold" font-family="monospace">[${idx}]</text></g>`).join("")}</g></svg>`;
+        }
+
+        // BLOCKCHAIN
+        if (cLower.includes("blockchain") || cLower.includes("block chain")) {
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><defs><linearGradient id="blockGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#312e81"/></linearGradient></defs><text x="400" y="35" text-anchor="middle" fill="#818cf8" font-size="20" font-weight="bold" font-family="sans-serif">BLOCKCHAIN: IMMUTABLE LINKED LEDGER</text><g transform="translate(40, 70)"><rect width="200" height="180" rx="12" fill="url(#blockGrad)" stroke="#6366f1" stroke-width="2"/><rect width="200" height="35" rx="12" fill="#4338ca"/><text x="100" y="24" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold" font-family="sans-serif">BLOCK #0 (Genesis)</text><text x="15" y="70" fill="#94a3b8" font-size="12" font-family="monospace">Prev Hash: 0000000</text><text x="15" y="100" fill="#a5b4fc" font-size="12" font-family="monospace">Data: Ledger Init</text><text x="15" y="130" fill="#94a3b8" font-size="12" font-family="monospace">Nonce: 4521</text><text x="15" y="160" fill="#38bdf8" font-size="12" font-family="monospace">Hash: 000a1b2c...</text></g><path d="M 245 160 L 285 160" stroke="#818cf8" stroke-width="3"/><text x="265" y="150" text-anchor="middle" fill="#c7d2fe" font-size="16" font-weight="bold">🔗</text><g transform="translate(295, 70)"><rect width="200" height="180" rx="12" fill="url(#blockGrad)" stroke="#6366f1" stroke-width="2"/><rect width="200" height="35" rx="12" fill="#4338ca"/><text x="100" y="24" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold" font-family="sans-serif">BLOCK #1</text><text x="15" y="70" fill="#94a3b8" font-size="12" fill="#a5b4fc" font-size="12" font-family="monospace">Data: Tx $50 -> Bob</text><text x="15" y="130" fill="#94a3b8" font-size="12" font-family="monospace">Nonce: 8812</text><text x="15" y="160" fill="#38bdf8" font-size="12" font-family="monospace">Hash: 000c3d4e...</text></g><path d="M 500 160 L 540 160" stroke="#818cf8" stroke-width="3"/><text x="520" y="150" text-anchor="middle" fill="#c7d2fe" font-size="16" font-weight="bold">🔗</text><g transform="translate(550, 70)"><rect width="200" height="180" rx="12" fill="url(#blockGrad)" stroke="#6366f1" stroke-width="2"/><rect width="200" height="35" rx="12" fill="#4338ca"/><text x="100" y="24" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold" font-family="sans-serif">BLOCK #2</text><text x="15" y="70" fill="#94a3b8" font-size="12" font-family="monospace">Prev: 000c3d4e...</text><text x="15" y="100" fill="#a5b4fc" font-size="12" font-family="monospace">Data: Tx $12 -> Sam</text><text x="15" y="130" fill="#94a3b8" font-size="12" font-family="monospace">Nonce: 9043</text><text x="15" y="160" fill="#38bdf8" font-size="12" font-family="monospace">Hash: 000f5e6d...</text></g></svg>`;
+        }
+
+        // ALPHABETS
+        if (cLower.includes("alphabet")) {
+          const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="35" text-anchor="middle" fill="#818cf8" font-size="22" font-weight="bold" font-family="sans-serif">THE ALPHABET (A TO Z)</text><g transform="translate(55, 55)">${letters.slice(0, 7).map((l, i) => `<g transform="translate(${i * 98}, 0)"><rect width="82" height="55" rx="10" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="41" y="38" text-anchor="middle" fill="#818cf8" font-size="28" font-weight="bold" font-family="sans-serif">${l}</text></g>`).join("")}${letters.slice(7, 14).map((l, i) => `<g transform="translate(${i * 98}, 68)"><rect width="82" height="55" rx="10" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="41" y="38" text-anchor="middle" fill="#a5b4fc" font-size="28" font-weight="bold" font-family="sans-serif">${l}</text></g>`).join("")}${letters.slice(14, 21).map((l, i) => `<g transform="translate(${i * 98}, 136)"><rect width="82" height="55" rx="10" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="41" y="38" text-anchor="middle" fill="#c7d2fe" font-size="28" font-weight="bold" font-family="sans-serif">${l}</text></g>`).join("")}${letters.slice(21, 26).map((l, i) => `<g transform="translate(${i * 98 + 98}, 204)"><rect width="82" height="55" rx="10" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="41" y="38" text-anchor="middle" fill="#38bdf8" font-size="28" font-weight="bold" font-family="sans-serif">${l}</text></g>`).join("")}</g></svg>`;
+        }
+
+        // ARRAYS
+        if (cLower.includes("array")) {
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="40" text-anchor="middle" fill="#818cf8" font-size="20" font-weight="bold" font-family="sans-serif">ARRAY DATA STRUCTURE (ZERO-INDEXED)</text><g transform="translate(60, 90)">${[10, 20, 30, 40, 50, 60].map((val, idx) => `<g transform="translate(${idx * 115}, 0)"><rect width="105" height="100" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="3"/><text x="52" y="60" text-anchor="middle" fill="#ffffff" font-size="32" font-weight="bold" font-family="sans-serif">${val}</text><text x="52" y="135" text-anchor="middle" fill="#38bdf8" font-size="16" font-weight="bold" font-family="monospace">Index [${idx}]</text></g>`).join("")}</g></svg>`;
+        }
+
+        // PROBABILITY
+        if (cLower.includes("probabilit")) {
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="35" text-anchor="middle" fill="#818cf8" font-size="20" font-weight="bold" font-family="sans-serif">PROBABILITY SCALE & CHANCE (0 TO 1.0)</text><g transform="translate(60, 65)"><rect width="320" height="210" rx="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="160" y="30" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="bold" font-family="sans-serif">COIN FLIP (50% / 0.5)</text><circle cx="90" cy="115" r="45" fill="#f59e0b" stroke="#fbbf24" stroke-width="4"/><text x="90" y="122" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold" font-family="sans-serif">HEADS</text><circle cx="230" cy="115" r="45" fill="#3b82f6" stroke="#60a5fa" stroke-width="4"/><text x="230" y="122" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold" font-family="sans-serif">TAILS</text><text x="160" y="190" text-anchor="middle" fill="#a5b4fc" font-size="13" font-family="sans-serif">P(Heads) = 1/2 = 0.5 (50%)</text></g><g transform="translate(420, 65)"><rect width="320" height="210" rx="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="160" y="30" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="bold" font-family="sans-serif">PROBABILITY SCALE</text><rect x="30" y="80" width="260" height="24" rx="12" fill="#0f172a" stroke="#475569"/><rect x="30" y="80" width="130" height="24" rx="12" fill="#38bdf8"/><circle cx="160" cy="92" r="14" fill="#818cf8" stroke="#ffffff" stroke-width="2"/><text x="30" y="130" fill="#ef4444" font-size="12" font-weight="bold" font-family="sans-serif">0 (Impossible)</text><text x="160" y="130" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="bold" font-family="sans-serif">0.5 (Even)</text><text x="290" y="130" text-anchor="end" fill="#22c55e" font-size="12" font-weight="bold" font-family="sans-serif">1.0 (Certain)</text><text x="160" y="190" text-anchor="middle" fill="#a5b4fc" font-size="13" font-family="sans-serif">Formula: Favorable / Total Outcomes</text></g></svg>`;
+        }
+
+        // ADDITION
+        if (cLower.includes("addit")) {
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="40" text-anchor="middle" fill="#818cf8" font-size="22" font-weight="bold" font-family="sans-serif">ADDITION VISUAL COUNTING (2 + 3 = 5)</text><g transform="translate(80, 85)"><rect width="180" height="150" rx="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="90" y="90" text-anchor="middle" font-size="48">🍎 🍎</text><text x="90" y="135" text-anchor="middle" fill="#818cf8" font-size="18" font-weight="bold">2 Apples</text></g><text x="300" y="170" text-anchor="middle" fill="#38bdf8" font-size="48" font-weight="bold">+</text><g transform="translate(340, 85)"><rect width="180" height="150" rx="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="90" y="90" text-anchor="middle" font-size="44">🍎 🍎 🍎</text><text x="90" y="135" text-anchor="middle" fill="#818cf8" font-size="18" font-weight="bold">3 Apples</text></g><text x="560" y="170" text-anchor="middle" fill="#38bdf8" font-size="48" font-weight="bold">=</text><g transform="translate(600, 85)"><rect width="160" height="150" rx="14" fill="#312e81" stroke="#22c55e" stroke-width="3"/><text x="80" y="90" text-anchor="middle" font-size="32">🍎🍎🍎🍎🍎</text><text x="80" y="135" text-anchor="middle" fill="#4ade80" font-size="18" font-weight="bold">5 Total</text></g></svg>`;
+        }
+
+        // RECURSION
+        if (cLower.includes("recursi")) {
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="40" text-anchor="middle" fill="#818cf8" font-size="20" font-weight="bold" font-family="sans-serif">RECURSION: NESTED CALLS & BASE CASE</text><g transform="translate(80, 70)"><rect width="640" height="200" rx="16" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><text x="320" y="35" text-anchor="middle" fill="#c7d2fe" font-size="16" font-weight="bold">Fn(3) - Main Call</text><g transform="translate(60, 45)"><rect width="520" height="135" rx="12" fill="#312e81" stroke="#818cf8" stroke-width="2"/><text x="260" y="30" text-anchor="middle" fill="#a5b4fc" font-size="15" font-weight="bold">Fn(2) - Inner Call</text><g transform="translate(60, 40)"><rect width="400" height="75" rx="10" fill="#4338ca" stroke="#4ade80" stroke-width="3"/><text x="200" y="45" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="bold">Fn(1) ➔ BASE CASE REACHED! (Returns 1)</text></g></g></g></svg>`;
+        }
+
+        // SOFTWARE DEVELOPMENT LIFE CYCLE (SDLC)
+        if (cLower.includes("software development") || cLower.includes("sdlc") || cLower.includes("life cycle")) {
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="32" text-anchor="middle" fill="#818cf8" font-size="20" font-weight="bold" font-family="sans-serif">SOFTWARE DEVELOPMENT LIFE CYCLE (SDLC)</text><g transform="translate(30, 55)"><g transform="translate(0, 0)"><rect width="165" height="110" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><circle cx="24" cy="24" r="13" fill="#4338ca"/><text x="24" y="28" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="sans-serif">1</text><text x="82.5" y="52" text-anchor="middle" fill="#38bdf8" font-size="15" font-weight="bold" font-family="sans-serif">📋 Plan</text><text x="82.5" y="78" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">Requirements &amp; Scope</text></g><text x="177" y="60" text-anchor="middle" fill="#818cf8" font-size="18" font-weight="bold">➔</text><g transform="translate(190, 0)"><rect width="165" height="110" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><circle cx="24" cy="24" r="13" fill="#4338ca"/><text x="24" y="28" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="sans-serif">2</text><text x="82.5" y="52" text-anchor="middle" fill="#38bdf8" font-size="15" font-weight="bold" font-family="sans-serif">🔍 Analyze</text><text x="82.5" y="78" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">Feasibility &amp; Specs</text></g><text x="367" y="60" text-anchor="middle" fill="#818cf8" font-size="18" font-weight="bold">➔</text><g transform="translate(380, 0)"><rect width="165" height="110" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><circle cx="24" cy="24" r="13" fill="#4338ca"/><text x="24" y="28" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="sans-serif">3</text><text x="82.5" y="52" text-anchor="middle" fill="#38bdf8" font-size="15" font-weight="bold" font-family="sans-serif">🎨 Design</text><text x="82.5" y="78" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">Architecture &amp; UI</text></g><text x="557" y="60" text-anchor="middle" fill="#818cf8" font-size="18" font-weight="bold">➔</text><g transform="translate(570, 0)"><rect width="165" height="110" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><circle cx="24" cy="24" r="13" fill="#4338ca"/><text x="24" y="28" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="sans-serif">4</text><text x="82.5" y="52" text-anchor="middle" fill="#38bdf8" font-size="15" font-weight="bold" font-family="sans-serif">💻 Build</text><text x="82.5" y="78" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">Coding &amp; Logic</text></g></g><g transform="translate(125, 195)"><g transform="translate(0, 0)"><rect width="165" height="110" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><circle cx="24" cy="24" r="13" fill="#4338ca"/><text x="24" y="28" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="sans-serif">5</text><text x="82.5" y="52" text-anchor="middle" fill="#38bdf8" font-size="15" font-weight="bold" font-family="sans-serif">🧪 Test</text><text x="82.5" y="78" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">QA &amp; Verification</text></g><text x="177" y="60" text-anchor="middle" fill="#818cf8" font-size="18" font-weight="bold">➔</text><g transform="translate(190, 0)"><rect width="165" height="110" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><circle cx="24" cy="24" r="13" fill="#4338ca"/><text x="24" y="28" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="sans-serif">6</text><text x="82.5" y="52" text-anchor="middle" fill="#38bdf8" font-size="15" font-weight="bold" font-family="sans-serif">🚀 Deploy</text><text x="82.5" y="78" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">Release &amp; Operations</text></g><text x="367" y="60" text-anchor="middle" fill="#818cf8" font-size="18" font-weight="bold">➔</text><g transform="translate(380, 0)"><rect width="165" height="110" rx="12" fill="#312e81" stroke="#22c55e" stroke-width="2"/><circle cx="24" cy="24" r="13" fill="#15803d"/><text x="24" y="28" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="sans-serif">7</text><text x="82.5" y="52" text-anchor="middle" fill="#4ade80" font-size="15" font-weight="bold" font-family="sans-serif">🛠️ Maintain</text><text x="82.5" y="78" text-anchor="middle" fill="#a7f3d0" font-size="11" font-family="sans-serif">Monitoring &amp; Updates</text></g></g></svg>`;
+        }
+
+        // PROCESS FLOW Diagram (if visual_steps available)
+        if (visualSteps && visualSteps.length > 0) {
+          const maxPerRow = visualSteps.length > 4 ? 4 : visualSteps.length;
+          const rows = [];
+          for (let i = 0; i < visualSteps.length; i += maxPerRow) {
+            rows.push(visualSteps.slice(i, i + maxPerRow));
+          }
+
+          const cardWidth = 165;
+          const cardHeight = 110;
+          const svgRows = rows.map((rowSteps, rIdx) => {
+            const rowWidth = rowSteps.length * (cardWidth + 25) - 25;
+            const startX = Math.max(20, Math.floor((760 - rowWidth) / 2));
+            const yPos = rIdx * (cardHeight + 25);
+            
+            const stepsMarkup = rowSteps.map((step, cIdx) => {
+              const idx = rIdx * maxPerRow + cIdx;
+              const xPos = startX + cIdx * (cardWidth + 25);
+              const hasArrow = cIdx < rowSteps.length - 1;
+              const arrowX = xPos + cardWidth + 12;
+              
+              return `
+                <g transform="translate(${xPos}, ${yPos})">
+                  <rect width="${cardWidth}" height="${cardHeight}" rx="12" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
+                  <circle cx="22" cy="22" r="12" fill="#4338ca"/>
+                  <text x="22" y="26" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold" font-family="sans-serif">${idx + 1}</text>
+                  <text x="${cardWidth / 2}" y="52" text-anchor="middle" fill="#38bdf8" font-size="14" font-weight="bold" font-family="sans-serif">${escapeHtml(step.label.substring(0, 18))}</text>
+                  <text x="${cardWidth / 2}" y="78" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">${escapeHtml(step.description.substring(0, 24))}</text>
+                </g>
+                ${hasArrow ? `<text x="${arrowX}" y="${yPos + 60}" text-anchor="middle" fill="#818cf8" font-size="18" font-weight="bold">➔</text>` : ''}
+              `;
+            }).join("");
+            return stepsMarkup;
+          }).join("");
+
+          const totalHeight = 70 + rows.length * 135;
+          return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 ${totalHeight}" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><text x="400" y="32" text-anchor="middle" fill="#818cf8" font-size="20" font-weight="bold" font-family="sans-serif">${escapeHtml(displayHeader.toUpperCase())}</text><g transform="translate(0, 55)">${svgRows}</g></svg>`;
+        }
+
+        // UNIVERSAL HIGH-CONTRAST CONCEPT INFOGRAPHIC SVG FOR ANY OTHER TOPIC
+        const titleText = escapeHtml(displayHeader.toUpperCase());
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" class="w-full h-auto bg-slate-950 rounded-2xl p-4 border border-indigo-500/30 shadow-lg"><rect width="800" height="320" rx="16" fill="#0f172a" stroke="#1e293b" stroke-width="2"/><text x="400" y="45" text-anchor="middle" fill="#818cf8" font-size="22" font-weight="bold" font-family="sans-serif">${titleText}</text><g transform="translate(60, 75)"><rect width="680" height="200" rx="14" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/><circle cx="70" cy="100" r="42" fill="#4338ca" stroke="#818cf8" stroke-width="3"/><text x="70" y="112" text-anchor="middle" fill="#ffffff" font-size="34">💡</text><text x="140" y="70" fill="#ffffff" font-size="20" font-weight="bold" font-family="sans-serif">Educational Topic Diagram</text><text x="140" y="105" fill="#a5b4fc" font-size="14" font-family="sans-serif">${escapeHtml(cTitle)} core structural breakdown & visual summary</text><rect x="140" y="135" width="160" height="34" rx="8" fill="#312e81"/><text x="220" y="157" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="bold" font-family="sans-serif">Interactive Visual</text><rect x="315" y="135" width="180" height="34" rx="8" fill="#312e81"/><text x="405" y="157" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="bold" font-family="sans-serif">Structured Learning</text></g></svg>`;
+      }
+
+      // Loop through EVERY concept in concepts array and create a dedicated card!
+      concepts.forEach((cName, idx) => {
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "flex flex-col space-y-2";
+        
+        const label = document.createElement("div");
+        label.className = "text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center";
+        label.innerHTML = `<span class="bg-indigo-900/60 text-indigo-200 px-2.5 py-1 rounded-md mr-2">Concept ${idx + 1}</span> ${escapeHtml(cName)}`;
+        
+        const svgString = buildConceptSVG(cName);
+        const wrapper = document.createElement("div");
+        wrapper.className = "w-full h-auto rounded-xl overflow-hidden shadow-lg border border-slate-800 bg-slate-950 flex items-center justify-center";
+        wrapper.innerHTML = svgString;
+        
+        cardDiv.appendChild(label);
+        cardDiv.appendChild(wrapper);
+        diagramsGrid.appendChild(cardDiv);
+      });
+    }
+
+    // STATE 2 Action: Submit answers for grading
+    async function handleGrade(event) {
+      event.preventDefault();
+      hideError();
+
+      // Final sanity check
+      if (selectedAnswers.some(ans => ans === null) || exerciseAnswers.some(ans => ans.trim() === "")) {
+        showError("Please answer all questions and exercises before submitting.");
+        return;
+      }
+
+      showLoading("Submitting your answers and retrieving grading feedback...");
+
+      try {
+        const response = await fetch("/api/mentor/grade", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            topic: currentTopic,
+            quiz: currentQuiz,
+            user_answers: selectedAnswers,
+            exercises: currentExercises,
+            user_exercise_answers: exerciseAnswers
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Something went wrong while grading the quiz.");
+        }
+
+        // Set visual elements in results view
+        const scoreEl = document.getElementById("result-score");
+        scoreEl.textContent = `${data.score} / ${data.total}`;
+        
+        // Color code score for fun and visual style
+        scoreEl.className = "text-5xl font-extrabold mt-1";
+        if (data.score === 3) {
+          scoreEl.classList.add("text-emerald-400");
+        } else if (data.score > 0) {
+          scoreEl.classList.add("text-amber-400");
+        } else {
+          scoreEl.classList.add("text-red-400");
+        }
+
+        document.getElementById("result-feedback").textContent = data.feedback;
+
+        // Switch screen
+        transitionTo('result');
+      } catch (err) {
+        showError(err.message || "Something went wrong while grading the quiz. Please try again.");
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // STATE 3 Action: Reset app to state 1
+    function resetApp() {
+      // Clear inputs
+      document.getElementById("topic").value = "";
+      document.getElementById("audience").value = "";
+
+      // Reset internal states
+      currentTopic = "";
+      currentAudience = "";
+      currentQuiz = [];
+      currentExercises = [];
+      selectedAnswers = [null, null, null];
+      exerciseAnswers = ["", ""];
+
+      // Hide errors
+      hideError();
+
+      // Go back to inputs
+      transitionTo('input');
+    }
+
+    // Simple HTML escaping helper to prevent script injection in parsed outputs
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+  </script>
+</body>
+</html>
