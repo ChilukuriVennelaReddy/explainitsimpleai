@@ -4,7 +4,7 @@ Explain It Simple is an AI-powered mentor tool that helps users understand diffi
 
 ## Live Demo
 
-🚀 **Live Web App:** [https://explainitsimpleai-ra1a4myys-vennelareddy1908-5213s-projects.vercel.app/](https://explainitsimpleai-ra1a4myys-vennelareddy1908-5213s-projects.vercel.app/)
+🚀 **Live Web App:** [https://explainitsimpleai.vercel.app](https://explainitsimpleai.vercel.app)
 
 ## Features
 
