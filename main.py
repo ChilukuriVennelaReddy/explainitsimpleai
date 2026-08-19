@@ -353,12 +353,12 @@ async def get_model_id(client: AsyncGroq) -> str:
         ]
         
         preferred_models = [
-            "groq/compound",
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant",
-            "groq/compound-mini",
+            "openai/gpt-oss-20b",
+            "allam-2-7b",
             "qwen/qwen3.6-27b",
-            "openai/gpt-oss-20b"
+            "openai/gpt-oss-120b",
+            "groq/compound-mini",
+            "groq/compound"
         ]
         for pm in preferred_models:
             if pm in valid_models:
@@ -368,11 +368,11 @@ async def get_model_id(client: AsyncGroq) -> str:
         if _resolved_model is None and valid_models:
             _resolved_model = valid_models[0]
         elif _resolved_model is None:
-            _resolved_model = "groq/compound"
+            _resolved_model = "openai/gpt-oss-20b"
             
     except Exception as e:
         logger.error(f"Failed to query model list from Groq: {e}.")
-        _resolved_model = "groq/compound"
+        _resolved_model = "openai/gpt-oss-20b"
     logger.info(f"Resolved Groq model to use: '{_resolved_model}'")
     return _resolved_model
 
@@ -470,53 +470,68 @@ async def generate_explanation(request: GenerateRequest):
     model_id = await get_model_id(client)
     system_prompt = GENERATION_SYSTEM_PROMPT
     
-    response_text = ""
-    candidate_models = [model_id, "llama-3.1-8b-instant", "groq/compound-mini", "qwen/qwen3.6-27b"]
+    candidate_models = [model_id, "openai/gpt-oss-20b", "allam-2-7b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b"]
     # De-duplicate candidate models order
     seen = set()
     models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
 
     parsed_json = None
+    last_response_text = ""
+
     for target_model in models_to_try:
         try:
             logger.info(f"Attempting completion with Groq model: '{target_model}'")
-            chat_completion = await client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Explain '{request.topic}' to '{request.audience}'. Respond ONLY with valid JSON."}
-                ],
-                model=target_model,
-                temperature=0.3,
-                max_tokens=2200,
-            )
-            response_text = chat_completion.choices[0].message.content or ""
-            parsed_json = safe_parse_json(response_text)
-            if isinstance(parsed_json, list) and len(parsed_json) > 0 and isinstance(parsed_json[0], dict):
-                parsed_json = parsed_json[0]
-            if isinstance(parsed_json, dict) and parsed_json.get("explanation"):
-                logger.info(f"Successfully generated response with model '{target_model}'")
-                break
+            try:
+                chat_completion = await client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Explain '{request.topic}' to '{request.audience}'. Respond ONLY with valid JSON."}
+                    ],
+                    model=target_model,
+                    response_format={"type": "json_object"},
+                    temperature=0.3,
+                    max_tokens=4000,
+                )
+            except Exception as format_err:
+                logger.warning(f"Completion with response_format json_object failed for '{target_model}': {format_err}. Retrying without response_format...")
+                chat_completion = await client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Explain '{request.topic}' to '{request.audience}'. Respond ONLY with valid JSON."}
+                    ],
+                    model=target_model,
+                    temperature=0.3,
+                    max_tokens=4000,
+                )
+
+            last_response_text = chat_completion.choices[0].message.content or ""
+            parsed = safe_parse_json(last_response_text)
+            if isinstance(parsed, list) and len(parsed) > 0 and isinstance(parsed[0], dict):
+                parsed = parsed[0]
+            
+            if isinstance(parsed, dict):
+                explanation_str = str(parsed.get("explanation", "")).strip()
+                analogy_str = str(parsed.get("analogy", "")).strip()
+                # Ensure explanation and analogy are substantive AI outputs, not empty or generic dummy fallbacks
+                if len(explanation_str) > 30 and len(analogy_str) > 15:
+                    parsed_json = parsed
+                    logger.info(f"Successfully generated full explanation with model '{target_model}'")
+                    break
+                else:
+                    logger.warning(f"Model '{target_model}' returned insufficient explanation or analogy content. Lengths: exp={len(explanation_str)}, ana={len(analogy_str)}. Retrying next model...")
         except Exception as err:
             logger.warning(f"Completion failed with model '{target_model}': {err}. Trying next fallback model...")
 
     if not parsed_json or not isinstance(parsed_json, dict):
-        try:
-            parsed_json = safe_parse_json(response_text)
-        except Exception:
-            parsed_json = {}
+        logger.error(f"Failed to generate valid explanation across all candidate models. Content: {last_response_text[:500]}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to generate explanation from AI model. Please try again."
+        )
 
-    if not isinstance(parsed_json, dict):
-        parsed_json = {}
-
-    # Fill any missing required keys safely so Pydantic validation always succeeds
+    # Fill optional/secondary defaults safely if needed, preserving the real explanation and analogy
     if "image_prompt" not in parsed_json or not parsed_json.get("image_prompt"):
         parsed_json["image_prompt"] = f"A clear, crisp, high-contrast educational illustration for {request.topic}."
-
-    if "explanation" not in parsed_json or not parsed_json.get("explanation"):
-        parsed_json["explanation"] = f"### Overview\nA comprehensive plain-language breakdown of {request.topic}."
-
-    if "analogy" not in parsed_json or not parsed_json.get("analogy"):
-        parsed_json["analogy"] = f"Think of {request.topic} like structured building blocks."
 
     if "quiz" not in parsed_json or not isinstance(parsed_json.get("quiz"), list) or len(parsed_json["quiz"]) == 0:
         parsed_json["quiz"] = [
@@ -536,7 +551,7 @@ async def generate_explanation(request: GenerateRequest):
         validated_response = GenerateResponse(**parsed_json)
         return validated_response
     except Exception as ve:
-        logger.error(f"AI response failed Pydantic validation: {ve}. Content: {response_text}")
+        logger.error(f"AI response failed Pydantic validation: {ve}. Content: {last_response_text}")
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
