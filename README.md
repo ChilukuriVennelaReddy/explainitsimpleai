@@ -2,6 +2,10 @@
 
 Explain It Simple is an AI-powered mentor tool that helps users understand difficult topics in simple language. The user provides a topic and a target audience, and the tool generates a plain-language explanation, a real-world analogy, and a 3-question multiple-choice quiz. The application then grades the user's answers and provides encouraging feedback.
 
+## Live Demo
+
+🚀 **Live Web App:** [https://explainitsimpleai-ra1a4myys-vennelareddy1908-5213s-projects.vercel.app/](https://explainitsimpleai-ra1a4myys-vennelareddy1908-5213s-projects.vercel.app/)
+
 ## Features
 
 - Simple AI explanations

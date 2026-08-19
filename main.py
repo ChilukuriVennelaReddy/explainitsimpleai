@@ -235,7 +235,7 @@ def get_groq_client() -> AsyncGroq:
             logger.error("GROQ_API_KEY is not set or is set to placeholder in environment")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="GROQ_API_KEY is not configured on the server. Please set it in your .env file."
+                detail="GROQ_API_KEY is not configured on the server. Please set GROQ_API_KEY in your Vercel Environment Variables (or .env file for local development)."
             )
         _groq_client = AsyncGroq(api_key=api_key.strip())
     return _groq_client
